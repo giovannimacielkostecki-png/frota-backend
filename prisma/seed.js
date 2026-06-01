@@ -7,12 +7,12 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando seed...');
 
-  const senhaHash = await bcrypt.hash('frota123', 12);
+  const senhaHash = await bcrypt.hash('123456', 12);
 
   await prisma.usuario.upsert({
-    where: { email: 'admin@frota.com' },
+    where: { email: 'giovanni' },
     update: {},
-    create: { nome: 'Administrador', email: 'admin@frota.com', senha: senhaHash, perfil: 'ADMIN' },
+    create: { nome: 'Administrador', email: 'giovanni', senha: senhaHash, perfil: 'ADMIN' },
   });
 
   await prisma.usuario.upsert({
