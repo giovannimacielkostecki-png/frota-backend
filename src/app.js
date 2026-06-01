@@ -24,6 +24,13 @@ const app = express();
 app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 app.use(express.json());
 app.use(morgan('dev'));
+app.get('/debug', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    env: process.env.NODE_ENV,
+    db: !!process.env.DATABASE_URL
+  });
+});
 
 // ── Rotas ────────────────────────────────────
 app.use('/api/auth',          authRoutes);
