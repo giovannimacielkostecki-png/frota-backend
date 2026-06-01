@@ -15,6 +15,7 @@ import custoRoutes from './routes/custoRoutes.js';
 import freteRoutes from './routes/freteRoutes.js';
 import rastreamentoRoutes from './routes/rastreamentoRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import usuarioRoutes from './routes/usuarioRoutes.js';
 
 import { errorHandler } from './middlewares/errorHandler.js';
 
@@ -43,7 +44,9 @@ app.use('/api/custos',        custoRoutes);
 app.use('/api/fretes',        freteRoutes);
 app.use('/api/rastreamento',  rastreamentoRoutes);
 app.use('/api/dashboard',     dashboardRoutes);
+app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/veiculos', veiculosRoutes);
+
 
 // ── Health check ─────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok', version: '1.0.0' }));
