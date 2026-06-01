@@ -7,16 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Usuario {
+  id       String  @id @default(uuid())
+  nome     String
+  email    String  @unique
+  senha    String
+  perfil   String  @default("ADMIN")
+  ativo    Boolean @default(true)
+  criadoEm DateTime @default(now())
+}
+
 model Veiculo {
   id        Int      @id @default(autoincrement())
   placa     String   @unique
   modelo    String
+  marca     String?
   ano       Int?
+  renavam   String?  @unique
+  chassi    String?  @unique
   kmAtual   Int      @default(0)
   status    String   @default("ATIVO")
   createdAt DateTime @default(now())
-
   abastecimentos Abastecimento[]
+  pneus          Pneu[]
+  documentos     Documento[]
+  multas         Multa[]
+  custos         Custo[]
+  fretes         Frete[]
+  rastreamentos  Rastreamento[]
 }
 
 model Abastecimento {
@@ -26,18 +44,79 @@ model Abastecimento {
   valor     Float
   km        Int
   posto     String?
-
+  kmL       Float?
   veiculoId Int
-  veiculo   Veiculo @relation(fields: [veiculoId], references: [id])
+  veiculo   Veiculo  @relation(fields: [veiculoId], references: [id])
 }
-model Usuario {
-  id       String  @id @default(uuid())
-  nome     String
-  email    String  @unique
-  senha    String
-  perfil   String  @default("ADMIN")
-  ativo    Boolean @default(true)
-  criadoEm DateTime @default(now())
 
-  
+model Pneu {
+  id         Int      @id @default(autoincrement())
+  posicao    String
+  marca      String?
+  modelo     String?
+  kmInstalado Int     @default(0)
+  kmAtual    Int      @default(0)
+  status     String   @default("BOM")
+  veiculoId  Int
+  veiculo    Veiculo  @relation(fields: [veiculoId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model Documento {
+  id             Int      @id @default(autoincrement())
+  tipo           String
+  dataVencimento DateTime
+  valor          Float?
+  observacao     String?
+  veiculoId      Int
+  veiculo        Veiculo  @relation(fields: [veiculoId], references: [id])
+  createdAt      DateTime @default(now())
+}
+
+model Multa {
+  id             Int      @id @default(autoincrement())
+  numeroAuto     String   @unique
+  descricao      String
+  local          String?
+  dataInfracao   DateTime
+  dataVencimento DateTime?
+  valor          Float
+  pontos         Int      @default(0)
+  paga           Boolean  @default(false)
+  veiculoId      Int
+  veiculo        Veiculo  @relation(fields: [veiculoId], references: [id])
+  createdAt      DateTime @default(now())
+}
+
+model Custo {
+  id        Int      @id @default(autoincrement())
+  tipo      String
+  descricao String?
+  valor     Float
+  data      DateTime @default(now())
+  veiculoId Int
+  veiculo   Veiculo  @relation(fields: [veiculoId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Frete {
+  id        Int      @id @default(autoincrement())
+  origem    String
+  destino   String
+  distancia Float?
+  valor     Float
+  status    String   @default("PENDENTE")
+  veiculoId Int
+  veiculo   Veiculo  @relation(fields: [veiculoId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Rastreamento {
+  id        Int      @id @default(autoincrement())
+  lat       Float
+  lng       Float
+  velocidade Float?
+  veiculoId Int
+  veiculo   Veiculo  @relation(fields: [veiculoId], references: [id])
+  createdAt DateTime @default(now())
 }
