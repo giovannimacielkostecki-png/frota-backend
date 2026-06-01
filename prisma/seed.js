@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando seed...');
 
-  const senhaHash = await bcrypt.hash('123456', 12);
+  const senhaHash = await bcrypt.hash('frota1234', 12);
 
   await prisma.usuario.upsert({
     where: { email: 'giovanni@gmail.com' },
