@@ -12,4 +12,6 @@ router.post('/cadastrar', ctrl.cadastrar);
 
 router.get('/perfil', autenticar, ctrl.perfil);
 
+router.put('/trocar-senha', autenticar, ctrl.trocarSenha);
+
 export default router;
