@@ -27,6 +27,7 @@ model Veiculo {
   chassi    String?  @unique
   kmAtual   Int      @default(0)
   status    String   @default("ATIVO")
+  ativo     Boolean  @default(true)
   createdAt DateTime @default(now())
   abastecimentos Abastecimento[]
   pneus          Pneu[]
