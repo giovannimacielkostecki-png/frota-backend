@@ -112,11 +112,13 @@ model Frete {
 }
 
 model Rastreamento {
-  id        Int      @id @default(autoincrement())
-  lat       Float
-  lng       Float
+  id         Int      @id @default(autoincrement())
+  latitude   Float
+  longitude  Float
   velocidade Float?
-  veiculoId Int
-  veiculo   Veiculo  @relation(fields: [veiculoId], references: [id])
-  createdAt DateTime @default(now())
+  ignicao    Boolean  @default(false)
+  hodometro  Float?
+  veiculoId  Int
+  veiculo    Veiculo  @relation(fields: [veiculoId], references: [id])
+  createdAt  DateTime @default(now())
 }
