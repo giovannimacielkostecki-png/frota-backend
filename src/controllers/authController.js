@@ -71,8 +71,27 @@ async function perfil(req, res) {
   res.json(req.usuario);
 }
 
+async function trocarSenha(req, res, next) {
+  try {
+    const { senhaAtual, novaSenha } = req.body;
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: req.usuario.id },
+    });
+    if (!(await bcrypt.compare(senhaAtual, usuario.senha))) {
+      return res.status(400).json({ erro: 'Senha atual incorreta' });
+    }
+    const hash = await bcrypt.hash(novaSenha, 12);
+    await prisma.usuario.update({
+      where: { id: req.usuario.id },
+      data: { senha: hash },
+    });
+    res.json({ ok: true, mensagem: 'Senha alterada com sucesso' });
+  } catch (err) { next(err); }
+}
+
 export default {
   login,
   cadastrar,
   perfil,
+  trocarSenha, 
 };
