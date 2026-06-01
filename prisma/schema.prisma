@@ -75,4 +75,81 @@ model HistoricoPneu {
   posicaoAnt  String
   posicaoNov  String
   kmRodado    Int
-  data
+  data        DateTime @default(now())
+  observacao  String?
+  pneuId      Int
+  pneu        Pneu     @relation(fields: [pneuId], references: [id])
+}
+
+model Documento {
+  id             Int      @id @default(autoincrement())
+  tipo           String
+  dataVencimento DateTime
+  valor          Float?
+  observacao     String?
+  veiculoId      Int
+  veiculo        Veiculo  @relation(fields: [veiculoId], references: [id])
+  createdAt      DateTime @default(now())
+}
+
+model Multa {
+  id             Int      @id @default(autoincrement())
+  numeroAuto     String   @unique
+  descricao      String
+  local          String?
+  dataInfracao   DateTime
+  dataVencimento DateTime?
+  dataPagamento  DateTime?
+  valor          Float
+  pontos         Int      @default(0)
+  status         String   @default("ABERTA")
+  paga           Boolean  @default(false)
+  veiculoId      Int
+  veiculo        Veiculo  @relation(fields: [veiculoId], references: [id])
+  createdAt      DateTime @default(now())
+}
+
+model Custo {
+  id          Int      @id @default(autoincrement())
+  tipo        String
+  descricao   String?
+  valor       Float
+  data        DateTime @default(now())
+  fornecedor  String?
+  veiculoId   Int
+  veiculo     Veiculo  @relation(fields: [veiculoId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model Frete {
+  id               Int      @id @default(autoincrement())
+  origem           String
+  destino          String
+  distanciaKm      Float?
+  pesoCarga        Float?
+  custoCombustivel Float?
+  custoPedagio     Float?
+  custoDiaria      Float?
+  custoDepreciacao Float?
+  custoTotal       Float?
+  valorFrete       Float
+  status           String   @default("PENDENTE")
+  dataChegada      DateTime?
+  veiculoId        Int
+  usuarioId        String?
+  veiculo          Veiculo  @relation(fields: [veiculoId], references: [id])
+  usuario          Usuario? @relation(fields: [usuarioId], references: [id])
+  criadoEm         DateTime @default(now())
+}
+
+model Rastreamento {
+  id         Int      @id @default(autoincrement())
+  latitude   Float
+  longitude  Float
+  velocidade Float?
+  ignicao    Boolean  @default(false)
+  hodometro  Float?
+  veiculoId  Int
+  veiculo    Veiculo  @relation(fields: [veiculoId], references: [id])
+  criadoEm   DateTime @default(now())
+}
