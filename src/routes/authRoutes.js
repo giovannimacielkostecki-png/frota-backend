@@ -14,6 +14,4 @@ router.get('/perfil', autenticar, ctrl.perfil);
 
 router.put('/trocar-senha', autenticar, ctrl.trocarSenha);
 
-router.put('/trocar-senha', autenticar, ctrl.trocarSenha);
-
 export default router;
