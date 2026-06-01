@@ -39,16 +39,20 @@ model Veiculo {
 }
 
 model Abastecimento {
-  id        Int      @id @default(autoincrement())
-  data      DateTime @default(now())
-  litros    Float
-  valor     Float
-  km        Int
-  posto     String?
-  kmL       Float?
-  veiculoId Int
-  veiculo   Veiculo  @relation(fields: [veiculoId], references: [id])
+  id           Int      @id @default(autoincrement())
+  data         DateTime @default(now())
+  litros       Float
+  valorTotal   Float
+  precoPorLitro Float?
+  kmAtual      Int
+  kmAnterior   Int?
+  consumoKmL   Float?
+  posto        String?
+  tipoCombustivel String?
+  veiculoId    Int
+  veiculo      Veiculo  @relation(fields: [veiculoId], references: [id])
 }
+
 
 model Pneu {
   id         Int      @id @default(autoincrement())
@@ -90,15 +94,17 @@ model Multa {
 }
 
 model Custo {
-  id        Int      @id @default(autoincrement())
-  tipo      String
-  descricao String?
-  valor     Float
-  data      DateTime @default(now())
-  veiculoId Int
-  veiculo   Veiculo  @relation(fields: [veiculoId], references: [id])
-  createdAt DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  tipo        String
+  descricao   String?
+  valor       Float
+  data        DateTime @default(now())
+  fornecedor  String?
+  veiculoId   Int
+  veiculo     Veiculo  @relation(fields: [veiculoId], references: [id])
+  createdAt   DateTime @default(now())
 }
+
 
 model Frete {
   id        Int      @id @default(autoincrement())
