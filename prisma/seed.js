@@ -1,31 +1,32 @@
 // prisma/seed.js
-// Popula o banco com dados iniciais para teste
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Iniciando seed...');
 
-  // Usuários
   const senhaHash = await bcrypt.hash('frota123', 12);
-  const admin = await prisma.usuario.upsert({
+
+  await prisma.usuario.upsert({
     where: { email: 'admin@frota.com' },
     update: {},
     create: { nome: 'Administrador', email: 'admin@frota.com', senha: senhaHash, perfil: 'ADMIN' },
   });
-  const gestor = await prisma.usuario.upsert({
+
+  await prisma.usuario.upsert({
     where: { email: 'gestor@frota.com' },
     update: {},
     create: { nome: 'Gestor da Frota', email: 'gestor@frota.com', senha: senhaHash, perfil: 'GESTOR' },
   });
-  const motorista = await prisma.usuario.upsert({
+
+  await prisma.usuario.upsert({
     where: { email: 'joao@frota.com' },
     update: {},
     create: { nome: 'João Silva', email: 'joao@frota.com', senha: senhaHash, perfil: 'MOTORISTA' },
   });
 
-  // Veículos
   const veiculos = await Promise.all([
     prisma.veiculo.upsert({
       where: { placa: 'BRA2E19' },
@@ -44,25 +45,23 @@ async function main() {
     }),
   ]);
 
-  // Documentos de vencimento
   const hoje = new Date();
   await prisma.documento.createMany({
     data: [
-      { veiculoId: veiculos[0].id, tipo: 'IPVA',         dataVencimento: new Date(hoje.getTime() + 7  * 86400000), valor: 4200 },
+      { veiculoId: veiculos[0].id, tipo: 'IPVA', dataVencimento: new Date(hoje.getTime() + 7 * 86400000), valor: 4200 },
       { veiculoId: veiculos[1].id, tipo: 'SEGURO_OPCIONAL', dataVencimento: new Date(hoje.getTime() + 15 * 86400000), valor: 12400 },
       { veiculoId: veiculos[2].id, tipo: 'LICENCIAMENTO', dataVencimento: new Date(hoje.getTime() + 12 * 86400000), valor: 180 },
     ],
     skipDuplicates: true,
   });
 
-  // Multa de exemplo
   await prisma.multa.upsert({
     where: { numeroAuto: '293847' },
     update: {},
     create: {
       veiculoId: veiculos[1].id,
       numeroAuto: '293847',
-      descricao: 'Excesso de velocidade — 97km/h em via de 80km/h',
+      descricao: 'Excesso de velocidade',
       local: 'Rodovia Anhanguera km 105',
       dataInfracao: new Date('2025-05-18'),
       dataVencimento: new Date('2025-06-18'),
@@ -72,10 +71,7 @@ async function main() {
   });
 
   console.log('✅ Seed concluído!');
-  console.log('\n📋 Credenciais de acesso:');
-  console.log('  Admin:    admin@frota.com  / frota123');
-  console.log('  Gestor:   gestor@frota.com / frota123');
-  console.log('  Motorista: joao@frota.com  / frota123\n');
+  console.log('Admin: admin@frota.com / frota123');
 }
 
 main()
