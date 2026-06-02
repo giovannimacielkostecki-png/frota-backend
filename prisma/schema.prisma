@@ -50,6 +50,8 @@ model Abastecimento {
   consumoKmL    Float?
   posto         String?
   tipoCombustivel String?
+  litrosArla    Float?
+  valorArla     Float?
   veiculoId     Int
   veiculo       Veiculo  @relation(fields: [veiculoId], references: [id])
 }
