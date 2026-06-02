@@ -4,7 +4,7 @@ import prisma from '../config/database.js';
 async function listarPorVeiculo(req, res, next) {
   try {
     const pneus = await prisma.pneu.findMany({
-      where: { veiculoId: req.params.veiculoId, status: { not: 'SUBSTITUIDO' } },
+      where: { veiculoId: Number(req.params.veiculoId), status: { not: 'SUBSTITUIDO' } },
       include: { historico: { orderBy: { data: 'desc' }, take: 3 } },
       orderBy: { posicao: 'asc' },
     });
@@ -15,23 +15,21 @@ async function listarPorVeiculo(req, res, next) {
 async function registrarRodizio(req, res, next) {
   try {
     const { pneuId, posicaoNova, kmAtual, observacao } = req.body;
-
-    const pneu = await prisma.pneu.findUniqueOrThrow({ where: { id: pneuId } });
-    const kmRodado = kmAtual - pneu.kmInstalado;
-
+    const pneu = await prisma.pneu.findUniqueOrThrow({ where: { id: Number(pneuId) } });
+    const kmRodado = Number(kmAtual) - pneu.kmInstalado;
     const [pneuAtualizado] = await prisma.$transaction([
       prisma.pneu.update({
-        where: { id: pneuId },
+        where: { id: Number(pneuId) },
         data: {
           posicao: posicaoNova,
-          kmInstalado: kmAtual,
+          kmInstalado: Number(kmAtual),
           kmRodado: { increment: kmRodado },
           status: calcularStatus(pneu.kmRodado + kmRodado, pneu.kmLimite),
         },
       }),
       prisma.historicoPneu.create({
         data: {
-          pneuId,
+          pneuId: Number(pneuId),
           posicaoAnt: pneu.posicao,
           posicaoNov: posicaoNova,
           kmRodado,
@@ -40,14 +38,12 @@ async function registrarRodizio(req, res, next) {
         },
       }),
     ]);
-
     res.json(pneuAtualizado);
   } catch (err) { next(err); }
 }
 
 async function alertasRodizio(req, res, next) {
   try {
-    // Retorna pneus com mais de 80% do km limite rodado
     const pneus = await prisma.pneu.findMany({
       where: { status: { in: ['ATENCAO', 'TROCAR'] } },
       include: { veiculo: { select: { placa: true, modelo: true } } },
@@ -64,8 +60,4 @@ function calcularStatus(kmRodado, kmLimite) {
   return 'BOM';
 }
 
-export default {
-  listarPorVeiculo,
-  registrarRodizio,
-  alertasRodizio,
-};
+export default { listarPorVeiculo, registrarRodizio, alertasRodizio };
