@@ -10,6 +10,13 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "node prisma/seed.js",
     "db:studio": "prisma studio"
+"scripts": {
+  "postinstall": "prisma generate",
+  "dev": "nodemon src/server.js",
+  "start": "npx prisma migrate deploy && npx prisma generate && node prisma/seed.js && node src/server.js",
+  ...
+}
+    
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
