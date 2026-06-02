@@ -2,11 +2,6 @@
 generator client {
   provider = "prisma-client-js"
 }
-...
-
-generator client {
-  provider = "prisma-client-js"
-}
 
 datasource db {
   provider = "postgresql"
@@ -47,20 +42,20 @@ model Veiculo {
 }
 
 model Abastecimento {
-  id            Int      @id @default(autoincrement())
-  data          DateTime @default(now())
-  litros        Float
-  valorTotal    Float
-  precoPorLitro Float?
-  kmAtual       Int
-  kmAnterior    Int?
-  consumoKmL    Float?
-  posto         String?
+  id              Int      @id @default(autoincrement())
+  data            DateTime @default(now())
+  litros          Float
+  valorTotal      Float
+  precoPorLitro   Float?
+  kmAtual         Int
+  kmAnterior      Int?
+  consumoKmL      Float?
+  posto           String?
   tipoCombustivel String?
-  litrosArla    Float?
-  valorArla     Float?
-  veiculoId     Int
-  veiculo       Veiculo  @relation(fields: [veiculoId], references: [id])
+  litrosArla      Float?
+  valorArla       Float?
+  veiculoId       Int
+  veiculo         Veiculo  @relation(fields: [veiculoId], references: [id])
 }
 
 model Pneu {
