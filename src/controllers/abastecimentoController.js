@@ -55,6 +55,7 @@ async function criar(req, res, next) {
       ? parseFloat(((kmAtual - kmAnterior) / litros).toFixed(2))
       : null;
     const precoPorLitro = parseFloat((valorTotal / litros).toFixed(4));
+if (resto.data) resto.data = new Date(resto.data).toISOString();
 
     const [abastecimento] = await prisma.$transaction([
       prisma.abastecimento.create({
