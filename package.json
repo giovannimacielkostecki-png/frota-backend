@@ -1,6 +1,6 @@
 {
   "name": "Retidao",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "description": "Backend do sistema de gestão de frota Retidão",
   "main": "src/server.js",
