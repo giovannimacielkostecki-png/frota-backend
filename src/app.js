@@ -6,7 +6,7 @@ import morgan from 'morgan';
 import veiculosRoutes from './routes/veiculos.routes.js';
 
 import authRoutes from './routes/authRoutes.js';
-import veiculoRoutes from './routes/veiculoRoutes.js';
+
 import abastecimentoRoutes from './routes/abastecimentoRoutes.js';
 import pneuRoutes from './routes/pneuRoutes.js';
 import documentoRoutes from './routes/documentoRoutes.js';
@@ -35,7 +35,7 @@ app.get('/debug', (req, res) => {
 
 // ── Rotas ────────────────────────────────────
 app.use('/api/auth',          authRoutes);
-app.use('/api/veiculos',      veiculoRoutes);
+
 app.use('/api/abastecimentos',abastecimentoRoutes);
 app.use('/api/pneus',         pneuRoutes);
 app.use('/api/documentos',    documentoRoutes);
