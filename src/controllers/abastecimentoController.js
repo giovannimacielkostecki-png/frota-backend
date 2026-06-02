@@ -16,7 +16,7 @@ async function listar(req, res, next) {
       prisma.abastecimento.count({ where }),
       prisma.abastecimento.findMany({
         where,
-        include: { veiculo: { select: { placa: true, modelo: true } } },
+        include: { veiculo: { select: { placa: true, modelo: true, motorista: true } } },
         orderBy: { data: 'desc' },
         skip,
         take: Number(limit),
@@ -66,7 +66,7 @@ if (resto.data) resto.data = new Date(resto.data).toISOString();
           ...(valorArla  !== undefined && { valorArla }),
           ...resto,
         },
-        include: { veiculo: { select: { placa: true, modelo: true } } },
+        include: { veiculo: {select: { placa: true, modelo: true, motorista: true } } },
       }),
       prisma.veiculo.update({
         where: { id: veiculoId },
