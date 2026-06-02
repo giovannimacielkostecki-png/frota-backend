@@ -22,7 +22,7 @@ async function listar(req, res, next) {
 async function buscarPorId(req, res, next) {
   try {
     const veiculo = await prisma.veiculo.findUniqueOrThrow({
-      where: { id: req.params.id },
+      where: { id: Number(req.params.id) },
       include: {
         documentos: { orderBy: { dataVencimento: 'asc' } },
         pneus: { where: { status: { not: 'SUBSTITUIDO' } } },
@@ -43,7 +43,7 @@ async function criar(req, res, next) {
 async function atualizar(req, res, next) {
   try {
     const veiculo = await prisma.veiculo.update({
-      where: { id: req.params.id },
+      where: { id: Number(req.params.id) },
       data: req.body,
     });
     res.json(veiculo);
@@ -53,7 +53,7 @@ async function atualizar(req, res, next) {
 async function desativar(req, res, next) {
   try {
     await prisma.veiculo.update({
-      where: { id: req.params.id },
+      where: { id: Number(req.params.id) },
       data: { ativo: false },
     });
     res.status(204).send();
