@@ -5,18 +5,12 @@
   "description": "Backend do sistema de gestão de frota Retidão",
   "main": "src/server.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "nodemon src/server.js",
-    "start": "npx prisma migrate deploy && npx prisma generate && node src/server.js"
+    "start": "npx prisma migrate deploy && node prisma/seed.js && node src/server.js",
     "db:migrate": "prisma migrate dev",
     "db:seed": "node prisma/seed.js",
     "db:studio": "prisma studio"
-"scripts": {
-  "postinstall": "prisma generate",
-  "dev": "nodemon src/server.js",
-  "start": "npx prisma migrate deploy && npx prisma generate && node prisma/seed.js && node src/server.js",
-  ...
-}
-    
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
