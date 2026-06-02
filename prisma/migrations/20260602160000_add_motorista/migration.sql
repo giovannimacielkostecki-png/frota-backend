@@ -1,0 +1,1 @@
+ALTER TABLE "Veiculo" ADD COLUMN IF NOT EXISTS "motorista" TEXT;
