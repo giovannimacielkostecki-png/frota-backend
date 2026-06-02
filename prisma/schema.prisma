@@ -24,6 +24,7 @@ model Veiculo {
   modelo    String
   marca     String?
   ano       Int?
+  motorista String?
   renavam   String?  @unique
   chassi    String?  @unique
   kmAtual   Int      @default(0)
