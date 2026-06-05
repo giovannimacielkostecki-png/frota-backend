@@ -22,7 +22,7 @@ model Usuario {
 model Veiculo {
   id        Int      @id @default(autoincrement())
   placa     String   @unique
-  modelo    String
+  modelo    String?
   marca     String?
   ano       Int?
   motorista String?
