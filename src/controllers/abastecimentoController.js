@@ -46,14 +46,15 @@ async function criar(req, res, next) {
     const valorArla  = valorArlaRaw  ? parseFloat(valorArlaRaw)  : undefined;
 
     // Busca último abastecimento para calcular consumo
-    const ultimo = await prisma.abastecimento.findFirst({
-      where: { veiculoId },
-      orderBy: { data: 'desc' },
-    });
-    const kmAnterior   = ultimo?.kmAtual ?? null;
-    const consumoKmL   = kmAnterior
-      ? parseFloat(((kmAtual - kmAnterior) / litros).toFixed(2))
-      : null;
+   // Depois — busca pelo KM imediatamente anterior (correto)
+const anterior = await prisma.abastecimento.findFirst({
+  where: { veiculoId, kmAtual: { lt: kmAtual } },
+  orderBy: { kmAtual: 'desc' },
+});
+const kmAnterior = anterior?.kmAtual ?? null;
+const consumoKmL = kmAnterior && (kmAtual - kmAnterior) > 0
+  ? parseFloat(((kmAtual - kmAnterior) / litros).toFixed(2))
+  : null;
     const precoPorLitro = parseFloat((valorTotal / litros).toFixed(4));
 if (resto.data) resto.data = new Date(resto.data).toISOString();
 
