@@ -45,18 +45,17 @@ async function criar(req, res, next) {
     const litrosArla = litrosArlaRaw ? parseFloat(litrosArlaRaw) : undefined;
     const valorArla  = valorArlaRaw  ? parseFloat(valorArlaRaw)  : undefined;
 
-    // Busca último abastecimento para calcular consumo
-   // Depois — busca pelo KM imediatamente anterior (correto)
-const anterior = await prisma.abastecimento.findFirst({
-  where: { veiculoId, kmAtual: { lt: kmAtual } },
-  orderBy: { kmAtual: 'desc' },
-});
-const kmAnterior = anterior?.kmAtual ?? null;
-const consumoKmL = kmAnterior && (kmAtual - kmAnterior) > 0
-  ? parseFloat(((kmAtual - kmAnterior) / litros).toFixed(2))
-  : null;
+    // Busca abastecimento anterior pelo KM (correto para inserções fora de ordem)
+    const anterior = await prisma.abastecimento.findFirst({
+      where: { veiculoId, kmAtual: { lt: kmAtual } },
+      orderBy: { kmAtual: 'desc' },
+    });
+    const kmAnterior = anterior?.kmAtual ?? null;
+    const consumoKmL = kmAnterior && (kmAtual - kmAnterior) > 0
+      ? parseFloat(((kmAtual - kmAnterior) / litros).toFixed(2))
+      : null;
     const precoPorLitro = parseFloat((valorTotal / litros).toFixed(4));
-if (resto.data) resto.data = new Date(resto.data).toISOString();
+    if (resto.data) resto.data = new Date(resto.data).toISOString();
 
     const [abastecimento] = await prisma.$transaction([
       prisma.abastecimento.create({
@@ -67,7 +66,7 @@ if (resto.data) resto.data = new Date(resto.data).toISOString();
           ...(valorArla  !== undefined && { valorArla }),
           ...resto,
         },
-        include: { veiculo: {select: { placa: true, modelo: true, motorista: true } } },
+        include: { veiculo: { select: { placa: true, modelo: true, motorista: true } } },
       }),
       prisma.veiculo.update({
         where: { id: veiculoId },
@@ -85,6 +84,33 @@ if (resto.data) resto.data = new Date(resto.data).toISOString();
       }),
     ]);
     res.status(201).json(abastecimento);
+  } catch (err) { next(err); }
+}
+
+async function atualizar(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    const { kmAtual, litros, valorTotal, posto, litrosArla, valorArla, data } = req.body;
+    const updated = await prisma.abastecimento.update({
+      where: { id },
+      data: {
+        kmAtual:    kmAtual    ? Number(kmAtual)        : undefined,
+        litros:     litros     ? parseFloat(litros)     : undefined,
+        valorTotal: valorTotal ? parseFloat(valorTotal) : undefined,
+        posto:      posto      ?? undefined,
+        litrosArla: litrosArla ? parseFloat(litrosArla) : null,
+        valorArla:  valorArla  ? parseFloat(valorArla)  : null,
+        data:       data       ? new Date(data)         : undefined,
+      },
+    });
+    res.json(updated);
+  } catch (err) { next(err); }
+}
+
+async function deletar(req, res, next) {
+  try {
+    await prisma.abastecimento.delete({ where: { id: Number(req.params.id) } });
+    res.status(204).send();
   } catch (err) { next(err); }
 }
 
@@ -120,4 +146,6 @@ export default {
   listar,
   resumoPorVeiculo,
   criar,
+  atualizar,
+  deletar,
 };
