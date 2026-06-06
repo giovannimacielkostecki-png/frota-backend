@@ -4,7 +4,7 @@ import prisma from '../config/database.js';
 function calcularValores({ distanciaKm, precoDiesel, consumoKmL, pedagio = 0, diariaMot = 0, margemLucro }) {
   const litrosNec        = distanciaKm / consumoKmL;
   const custoCombustivel = parseFloat((litrosNec * precoDiesel).toFixed(2));
-  const custoDiaria      = parseFloat((diariaMot * (distanciaKm / 500)).toFixed(2));
+  const custoDiaria = parseFloat(diariaMot.toFixed(2));
   const custoDepreciacao = parseFloat((distanciaKm * 0.15).toFixed(2));
   const custoPedagio     = pedagio;
   const custoTotal       = parseFloat((custoCombustivel + custoPedagio + custoDiaria + custoDepreciacao).toFixed(2));
