@@ -4,7 +4,7 @@ import prisma from '../config/database.js';
 function calcularValores({ distanciaKm, precoDiesel, consumoKmL, pedagio = 0, diariaMot = 0, margemLucro }) {
   const litrosNec        = distanciaKm / consumoKmL;
   const custoCombustivel = parseFloat((litrosNec * precoDiesel).toFixed(2));
-  const custoDiaria = parseFloat(diariaMot.toFixed(2));
+  const custoDiaria      = parseFloat(diariaMot.toFixed(2));
   const custoDepreciacao = parseFloat((distanciaKm * 0.40).toFixed(2));
   const custoPedagio     = pedagio;
   const custoTotal       = parseFloat((custoCombustivel + custoPedagio + custoDiaria + custoDepreciacao).toFixed(2));
@@ -39,7 +39,6 @@ async function salvar(req, res, next) {
       veiculoId, origem, destino, distanciaKm, pesoCarga,
       precoDiesel, consumoKmL, pedagio, diariaMot, margemLucro,
     } = req.body;
-
     const vals = calcularValores({
       distanciaKm: Number(distanciaKm),
       precoDiesel:  parseFloat(precoDiesel),
@@ -48,13 +47,11 @@ async function salvar(req, res, next) {
       diariaMot:    diariaMot ? parseFloat(diariaMot) : 0,
       margemLucro:  Number(margemLucro) || 0,
     });
-
     const frete = await prisma.frete.create({
       data: {
         veiculoId:        Number(veiculoId),
         usuarioId:        req.usuario?.id || null,
-        origem:           origem,
-        destino:          destino,
+        origem, destino,
         distanciaKm:      Number(distanciaKm),
         pesoCarga:        pesoCarga ? Number(pesoCarga) : null,
         custoCombustivel: vals.custoCombustivel,
@@ -67,6 +64,47 @@ async function salvar(req, res, next) {
       include: { veiculo: { select: { placa: true, modelo: true } } },
     });
     res.status(201).json(frete);
+  } catch (err) { next(err); }
+}
+
+async function atualizar(req, res, next) {
+  try {
+    const {
+      veiculoId, origem, destino, distanciaKm, pesoCarga,
+      precoDiesel, consumoKmL, pedagio, diariaMot, margemLucro,
+    } = req.body;
+    const vals = calcularValores({
+      distanciaKm: Number(distanciaKm),
+      precoDiesel:  parseFloat(precoDiesel),
+      consumoKmL:   parseFloat(consumoKmL),
+      pedagio:      pedagio   ? parseFloat(pedagio)   : 0,
+      diariaMot:    diariaMot ? parseFloat(diariaMot) : 0,
+      margemLucro:  Number(margemLucro) || 0,
+    });
+    const frete = await prisma.frete.update({
+      where: { id: Number(req.params.id) },
+      data: {
+        veiculoId:        Number(veiculoId),
+        origem, destino,
+        distanciaKm:      Number(distanciaKm),
+        pesoCarga:        pesoCarga ? Number(pesoCarga) : null,
+        custoCombustivel: vals.custoCombustivel,
+        custoPedagio:     vals.custoPedagio,
+        custoDiaria:      vals.custoDiaria,
+        custoDepreciacao: vals.custoDepreciacao,
+        custoTotal:       vals.custoTotal,
+        valorFrete:       vals.valorFrete,
+      },
+      include: { veiculo: { select: { placa: true, modelo: true } } },
+    });
+    res.json(frete);
+  } catch (err) { next(err); }
+}
+
+async function deletar(req, res, next) {
+  try {
+    await prisma.frete.delete({ where: { id: Number(req.params.id) } });
+    res.status(204).send();
   } catch (err) { next(err); }
 }
 
@@ -100,4 +138,4 @@ async function atualizarStatus(req, res, next) {
   } catch (err) { next(err); }
 }
 
-export default { calcular, salvar, listar, atualizarStatus };
+export default { calcular, salvar, atualizar, deletar, listar, atualizarStatus };
