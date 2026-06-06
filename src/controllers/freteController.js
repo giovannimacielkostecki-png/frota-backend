@@ -35,22 +35,34 @@ async function calcular(req, res, next) {
 
 async function salvar(req, res, next) {
   try {
-    const { veiculoId, precoDiesel, consumoKmL, ...dados } = req.body;
+    const {
+      veiculoId, origem, destino, distanciaKm, pesoCarga,
+      precoDiesel, consumoKmL, pedagio, diariaMot, margemLucro,
+    } = req.body;
+
     const vals = calcularValores({
-      ...dados,
-      distanciaKm: Number(dados.distanciaKm),
+      distanciaKm: Number(distanciaKm),
       precoDiesel:  parseFloat(precoDiesel),
       consumoKmL:   parseFloat(consumoKmL),
-      pedagio:      dados.pedagio   ? parseFloat(dados.pedagio)   : 0,
-      diariaMot:    dados.diariaMot ? parseFloat(dados.diariaMot) : 0,
-      margemLucro:  Number(dados.margemLucro),
+      pedagio:      pedagio   ? parseFloat(pedagio)   : 0,
+      diariaMot:    diariaMot ? parseFloat(diariaMot) : 0,
+      margemLucro:  Number(margemLucro) || 0,
     });
+
     const frete = await prisma.frete.create({
       data: {
-        veiculoId:  Number(veiculoId),
-        usuarioId:  req.usuario.id,
-        ...dados,
-        ...vals,
+        veiculoId:        Number(veiculoId),
+        usuarioId:        req.usuario?.id || null,
+        origem:           origem,
+        destino:          destino,
+        distanciaKm:      Number(distanciaKm),
+        pesoCarga:        pesoCarga ? Number(pesoCarga) : null,
+        custoCombustivel: vals.custoCombustivel,
+        custoPedagio:     vals.custoPedagio,
+        custoDiaria:      vals.custoDiaria,
+        custoDepreciacao: vals.custoDepreciacao,
+        custoTotal:       vals.custoTotal,
+        valorFrete:       vals.valorFrete,
       },
       include: { veiculo: { select: { placa: true, modelo: true } } },
     });
