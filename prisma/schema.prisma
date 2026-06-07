@@ -1,4 +1,4 @@
-// updated 2026-06-02
+// updated 2026-06-07
 generator client {
   provider = "prisma-client-js"
 }
@@ -134,6 +134,7 @@ model Frete {
   custoCombustivel Float?
   custoPedagio     Float?
   custoDiaria      Float?
+  custoArla        Float?   @default(0)  // ← NOVO: custo Arla 32 (R$/km)
   custoDepreciacao Float?
   custoTotal       Float?
   valorFrete       Float
