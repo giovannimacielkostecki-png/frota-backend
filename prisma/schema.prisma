@@ -142,6 +142,7 @@ model Frete {
   valorFrete       Float
   status           String   @default("PENDENTE")
   dataChegada      DateTime?
+  dataRota         DateTime? // ← data em que a rota foi realizada
   veiculoId        Int
   usuarioId        String?
   veiculo          Veiculo  @relation(fields: [veiculoId], references: [id])
