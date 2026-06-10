@@ -160,3 +160,12 @@ model Rastreamento {
   veiculo    Veiculo  @relation(fields: [veiculoId], references: [id])
   criadoEm   DateTime @default(now())
 }
+
+model Rota {
+  id         Int      @id @default(autoincrement())
+  origem     String
+  destino    String
+  kmEstimado Float
+  ativo      Boolean  @default(true)
+  criadoEm   DateTime @default(now())
+}
