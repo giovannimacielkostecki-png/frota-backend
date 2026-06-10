@@ -42,7 +42,9 @@ async function salvar(req, res, next) {
   try {
     const {
       veiculoId, origem, destino, distanciaKm, pesoCarga,
-      precoDiesel, consumoKmL, pedagio, diariaMot, margemLucro, custoArlaKm, custoManutencaoKm, custosFixosKm,
+      precoDiesel, consumoKmL, pedagio, diariaMot, margemLucro,
+      custoArlaKm, custoManutencaoKm, custosFixosKm,
+      dataRota, // ← NOVO
     } = req.body;
     const vals = calcularValores({
       distanciaKm:    Number(distanciaKm),
@@ -71,6 +73,7 @@ async function salvar(req, res, next) {
         custosFixosKm:    custosFixosKm ? parseFloat(custosFixosKm) : 2.40,
         custoTotal:       vals.custoTotal,
         valorFrete:       vals.valorFrete,
+        dataRota:         dataRota ? new Date(dataRota) : null, // ← NOVO
       },
       include: { veiculo: { select: { placa: true, modelo: true } } },
     });
@@ -82,7 +85,9 @@ async function atualizar(req, res, next) {
   try {
     const {
       veiculoId, origem, destino, distanciaKm, pesoCarga,
-      precoDiesel, consumoKmL, pedagio, diariaMot, margemLucro, custoArlaKm, custoManutencaoKm, custosFixosKm,
+      precoDiesel, consumoKmL, pedagio, diariaMot, margemLucro,
+      custoArlaKm, custoManutencaoKm, custosFixosKm,
+      dataRota, // ← NOVO
     } = req.body;
     const vals = calcularValores({
       distanciaKm:    Number(distanciaKm),
@@ -111,6 +116,7 @@ async function atualizar(req, res, next) {
         custosFixosKm:    custosFixosKm ? parseFloat(custosFixosKm) : 2.40,
         custoTotal:       vals.custoTotal,
         valorFrete:       vals.valorFrete,
+        dataRota:         dataRota ? new Date(dataRota) : null, // ← NOVO
       },
       include: { veiculo: { select: { placa: true, modelo: true } } },
     });
