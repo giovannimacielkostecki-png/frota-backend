@@ -13,10 +13,10 @@ import freteRoutes from './routes/freteRoutes.js';
 import rastreamentoRoutes from './routes/rastreamentoRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import usuarioRoutes from './routes/usuarioRoutes.js';
+import rotaRoutes from './routes/rotaRoutes.js';          // ← NOVO
 import { errorHandler } from './middlewares/errorHandler.js';
 
 const app = express();
-
 app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 app.use(express.json());
 app.use(morgan('dev'));
@@ -36,10 +36,10 @@ app.use('/api/fretes',         freteRoutes);
 app.use('/api/rastreamento',   rastreamentoRoutes);
 app.use('/api/dashboard',      dashboardRoutes);
 app.use('/api/usuarios',       usuarioRoutes);
+app.use('/api/rotas',          rotaRoutes);               // ← NOVO
 
 app.get('/health', (req, res) => res.json({ status: 'ok', version: '1.0.0' }));
 app.get('/', (req, res) => res.send('FrotaPRO Backend Online 🚛'));
-
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada' }));
 app.use(errorHandler);
 
