@@ -45,7 +45,6 @@ async function criar(req, res, next) {
     const litrosArla = litrosArlaRaw ? parseFloat(litrosArlaRaw) : undefined;
     const valorArla  = valorArlaRaw  ? parseFloat(valorArlaRaw)  : undefined;
 
-    // Busca abastecimento anterior pelo KM (correto para inserções fora de ordem)
     const anterior = await prisma.abastecimento.findFirst({
       where: { veiculoId, kmAtual: { lt: kmAtual } },
       orderBy: { kmAtual: 'desc' },
@@ -90,17 +89,19 @@ async function criar(req, res, next) {
 async function atualizar(req, res, next) {
   try {
     const id = Number(req.params.id);
-    const { kmAtual, litros, valorTotal, posto, litrosArla, valorArla, data } = req.body;
+    // FIX: inclui veiculoId no destructuring
+    const { kmAtual, litros, valorTotal, posto, litrosArla, valorArla, data, veiculoId } = req.body;
 
     // Busca o registro atual para ter veiculoId e valores de fallback
     const atual = await prisma.abastecimento.findUnique({ where: { id } });
-    const novoKm      = kmAtual    ? Number(kmAtual)        : atual.kmAtual;
-    const novosLitros = litros     ? parseFloat(litros)     : atual.litros;
-    const novoValor   = valorTotal ? parseFloat(valorTotal) : atual.valorTotal;
+    const novoVeiculoId = veiculoId ? Number(veiculoId) : atual.veiculoId;
+    const novoKm        = kmAtual    ? Number(kmAtual)        : atual.kmAtual;
+    const novosLitros   = litros     ? parseFloat(litros)     : atual.litros;
+    const novoValor     = valorTotal ? parseFloat(valorTotal) : atual.valorTotal;
 
-    // Recalcula kmAnterior e consumoKmL com base no novo KM
+    // Recalcula kmAnterior e consumoKmL com base no novo KM e veículo
     const anterior = await prisma.abastecimento.findFirst({
-      where: { veiculoId: atual.veiculoId, kmAtual: { lt: novoKm }, id: { not: id } },
+      where: { veiculoId: novoVeiculoId, kmAtual: { lt: novoKm }, id: { not: id } },
       orderBy: { kmAtual: 'desc' },
     });
     const kmAnterior = anterior?.kmAtual ?? null;
@@ -112,6 +113,7 @@ async function atualizar(req, res, next) {
     const updated = await prisma.abastecimento.update({
       where: { id },
       data: {
+        veiculoId:    novoVeiculoId,  // FIX: salva o veículo atualizado
         kmAtual:      novoKm,
         kmAnterior,
         litros:       novosLitros,
@@ -121,13 +123,13 @@ async function atualizar(req, res, next) {
         posto:        posto      ?? undefined,
         litrosArla:   litrosArla ? parseFloat(litrosArla) : null,
         valorArla:    valorArla  ? parseFloat(valorArla)  : null,
-        data:         data       ? new Date(data)         : undefined,
+        data:         data       ? new Date(data + 'T12:00:00') : undefined, // FIX: evita bug de timezone
       },
     });
 
     // Recalcula o abastecimento SEGUINTE que depende deste kmAtual
     const proximo = await prisma.abastecimento.findFirst({
-      where: { veiculoId: atual.veiculoId, kmAtual: { gt: novoKm } },
+      where: { veiculoId: novoVeiculoId, kmAtual: { gt: novoKm } },
       orderBy: { kmAtual: 'asc' },
     });
     if (proximo) {
