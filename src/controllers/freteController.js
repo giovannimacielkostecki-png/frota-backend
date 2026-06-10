@@ -140,7 +140,7 @@ async function listar(req, res, next) {
         status:    status    || undefined,
       },
       include: {
-        veiculo: { select: { placa: true, modelo: true } },
+        veiculo: { select: { placa: true, modelo: true, motorista: true } },
         usuario: { select: { nome: true } },
       },
       orderBy: { criadoEm: 'desc' },
