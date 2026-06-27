@@ -156,35 +156,68 @@ async function deletar(req, res, next) {
 async function resumoPorVeiculo(req, res, next) {
   try {
     const { mes, ano } = req.query;
-    const inicio = new Date(ano || new Date().getFullYear(), (mes || new Date().getMonth() + 1) - 1, 1);
-    const fim    = new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0, 23, 59, 59);
-    const resumo = await prisma.abastecimento.groupBy({
-      by: ['veiculoId'],
-      where: { data: { gte: inicio, lte: fim } },
-      _sum:  { litros: true, valorTotal: true },
-      _avg:  { consumoKmL: true },
-      _count: { id: true },
-    });
-    const veiculoIds = resumo.map(r => r.veiculoId);
-    const veiculos   = await prisma.veiculo.findMany({
-      where: { id: { in: veiculoIds } },
-      select: { id: true, placa: true, modelo: true },
-    });
-    const mapa = Object.fromEntries(veiculos.map(v => [v.id, v]));
-    res.json(resumo.map(r => ({
-      veiculo: mapa[r.veiculoId],
-      totalLitros:       r._sum.litros,
-      totalValor:        r._sum.valorTotal,
-      mediaConsumo:      r._avg.consumoKmL ? parseFloat(r._avg.consumoKmL.toFixed(2)) : null,
-      qtdAbastecimentos: r._count.id,
-    })));
-  } catch (err) { next(err); }
-}
 
-export default {
-  listar,
-  resumoPorVeiculo,
-  criar,
-  atualizar,
-  deletar,
-};
+    const inicio = new Date(
+      ano || new Date().getFullYear(),
+      (mes || new Date().getMonth() + 1) - 1,
+      1
+    );
+
+    const fim = new Date(
+      inicio.getFullYear(),
+      inicio.getMonth() + 1,
+      0,
+      23,
+      59,
+      59
+    );
+
+    const abastecimentos = await prisma.abastecimento.findMany({
+      where: { data: { gte: inicio, lte: fim } },
+      include: {
+        veiculo: {
+          select: { id: true, placa: true, modelo: true }
+        }
+      }
+    });
+
+    const grupos = {};
+
+    abastecimentos.forEach((a) => {
+      if (!grupos[a.veiculoId]) {
+        grupos[a.veiculoId] = {
+          veiculo: a.veiculo,
+          totalLitros: 0,
+          totalValor: 0,
+          totalKmRodado: 0,
+          qtdAbastecimentos: 0
+        };
+      }
+
+      const kmRodado =
+        a.kmAnterior && a.kmAtual > a.kmAnterior
+          ? a.kmAtual - a.kmAnterior
+          : 0;
+
+      grupos[a.veiculoId].totalLitros += Number(a.litros || 0);
+      grupos[a.veiculoId].totalValor += Number(a.valorTotal || 0);
+      grupos[a.veiculoId].totalKmRodado += kmRodado;
+      grupos[a.veiculoId].qtdAbastecimentos += 1;
+    });
+
+    const resultado = Object.values(grupos).map((g) => ({
+      veiculo: g.veiculo,
+      totalLitros: Number(g.totalLitros.toFixed(2)),
+      totalValor: Number(g.totalValor.toFixed(2)),
+      mediaConsumo:
+        g.totalLitros > 0
+          ? Number((g.totalKmRodado / g.totalLitros).toFixed(2))
+          : null,
+      qtdAbastecimentos: g.qtdAbastecimentos
+    }));
+
+    res.json(resultado);
+  } catch (err) {
+    next(err);
+  }
+}
