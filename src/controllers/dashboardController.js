@@ -67,7 +67,7 @@ async function resumo(req, res, next) {
         by: ['veiculoId'],
         where: {
           data: { gte: inicio, lte: fim },
-          kmAtual: { not: null },
+          kmAtual: { gt: 0 },
         },
         _min: { kmAtual: true },
         _max: { kmAtual: true },
@@ -82,21 +82,13 @@ async function resumo(req, res, next) {
 
     res.json({
       frota: { total: totalVeiculos },
-
-      km: {
-        kmMes,
-      },
-
-      custos: {
-        totalMes: custosMes._sum.valor || 0,
-      },
-
+      km: { kmMes },
+      custos: { totalMes: custosMes._sum.valor || 0 },
       abastecimento: {
         totalLitros: abastecimentosMes._sum.litros || 0,
         totalValor: abastecimentosMes._sum.valorTotal || 0,
         quantidade: abastecimentosMes._count.id,
       },
-
       alertas: {
         multasAbertas,
         docVencendo7,
@@ -165,7 +157,6 @@ async function custoPorVeiculo(req, res, next) {
     });
 
     const mapaVeiculos = Object.fromEntries(veiculos.map(v => [v.id, v]));
-
     const agrupado = {};
 
     for (const c of custos) {
@@ -201,7 +192,7 @@ async function kmPorVeiculo(req, res, next) {
     const abastecimentos = await prisma.abastecimento.findMany({
       where: {
         data: { gte: inicio, lte: fim },
-        kmAtual: { not: null },
+        kmAtual: { gt: 0 },
       },
       include: {
         veiculo: {
