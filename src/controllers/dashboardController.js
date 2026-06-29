@@ -2,9 +2,10 @@ import prisma from '../config/database.js';
 
 async function resumo(req, res, next) {
   try {
-    const hoje  = new Date();
+    const hoje = new Date();
     const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    const fim    = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59);
+    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59);
+
     const [
       totalVeiculos,
       custosMes,
@@ -14,37 +15,88 @@ async function resumo(req, res, next) {
       docVencendo15,
       docVencendo30,
       pneusAlerta,
+      kmPorVeiculoMes,
     ] = await Promise.all([
       prisma.veiculo.count({ where: { ativo: true } }),
+
       prisma.custo.aggregate({
         where: { data: { gte: inicio, lte: fim } },
         _sum: { valor: true },
       }),
+
       prisma.abastecimento.aggregate({
         where: { data: { gte: inicio, lte: fim } },
         _sum: { litros: true, valorTotal: true },
         _count: { id: true },
       }),
+
       prisma.multa.count({ where: { status: 'ABERTA' } }),
+
       prisma.documento.count({
-        where: { dataVencimento: { gte: hoje, lte: new Date(hoje.getTime() + 7 * 86400000) } },
+        where: {
+          dataVencimento: {
+            gte: hoje,
+            lte: new Date(hoje.getTime() + 7 * 86400000),
+          },
+        },
       }),
+
       prisma.documento.count({
-        where: { dataVencimento: { gte: hoje, lte: new Date(hoje.getTime() + 15 * 86400000) } },
+        where: {
+          dataVencimento: {
+            gte: hoje,
+            lte: new Date(hoje.getTime() + 15 * 86400000),
+          },
+        },
       }),
+
       prisma.documento.count({
-        where: { dataVencimento: { gte: hoje, lte: new Date(hoje.getTime() + 30 * 86400000) } },
+        where: {
+          dataVencimento: {
+            gte: hoje,
+            lte: new Date(hoje.getTime() + 30 * 86400000),
+          },
+        },
       }),
-      prisma.pneu.count({ where: { status: { in: ['ATENCAO', 'TROCAR'] } } }),
+
+      prisma.pneu.count({
+        where: { status: { in: ['ATENCAO', 'TROCAR'] } },
+      }),
+
+      prisma.abastecimento.groupBy({
+        by: ['veiculoId'],
+        where: {
+          data: { gte: inicio, lte: fim },
+          kmAtual: { not: null },
+        },
+        _min: { kmAtual: true },
+        _max: { kmAtual: true },
+      }),
     ]);
+
+    const kmMes = kmPorVeiculoMes.reduce((total, item) => {
+      const inicial = item._min.kmAtual || 0;
+      const final = item._max.kmAtual || 0;
+      return total + Math.max(final - inicial, 0);
+    }, 0);
+
     res.json({
       frota: { total: totalVeiculos },
-      custos: { totalMes: custosMes._sum.valor || 0 },
+
+      km: {
+        kmMes,
+      },
+
+      custos: {
+        totalMes: custosMes._sum.valor || 0,
+      },
+
       abastecimento: {
         totalLitros: abastecimentosMes._sum.litros || 0,
-        totalValor:  abastecimentosMes._sum.valorTotal || 0,
-        quantidade:  abastecimentosMes._count.id,
+        totalValor: abastecimentosMes._sum.valorTotal || 0,
+        quantidade: abastecimentosMes._count.id,
       },
+
       alertas: {
         multasAbertas,
         docVencendo7,
@@ -54,12 +106,15 @@ async function resumo(req, res, next) {
         total: multasAbertas + docVencendo7 + pneusAlerta,
       },
     });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 }
 
 async function custosMensais(req, res, next) {
   try {
     const { ano = new Date().getFullYear() } = req.query;
+
     const dados = await prisma.$queryRaw`
       SELECT
         EXTRACT(MONTH FROM data) AS mes,
@@ -70,37 +125,68 @@ async function custosMensais(req, res, next) {
       GROUP BY mes, tipo
       ORDER BY mes
     `;
+
     res.json(dados);
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 }
 
 async function custoPorVeiculo(req, res, next) {
   try {
     const { mes, ano } = req.query;
-    const inicio = new Date(ano || new Date().getFullYear(), (mes || new Date().getMonth() + 1) - 1, 1);
-    const fim    = new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0, 23, 59, 59);
+
+    const inicio = new Date(
+      ano || new Date().getFullYear(),
+      (mes || new Date().getMonth() + 1) - 1,
+      1
+    );
+
+    const fim = new Date(
+      inicio.getFullYear(),
+      inicio.getMonth() + 1,
+      0,
+      23,
+      59,
+      59
+    );
+
     const custos = await prisma.custo.groupBy({
       by: ['veiculoId', 'tipo'],
       where: { data: { gte: inicio, lte: fim } },
       _sum: { valor: true },
     });
+
     const veiculoIds = [...new Set(custos.map(c => c.veiculoId))];
-    const veiculos   = await prisma.veiculo.findMany({
+
+    const veiculos = await prisma.veiculo.findMany({
       where: { id: { in: veiculoIds } },
       select: { id: true, placa: true, modelo: true, kmAtual: true },
     });
+
     const mapaVeiculos = Object.fromEntries(veiculos.map(v => [v.id, v]));
+
     const agrupado = {};
+
     for (const c of custos) {
       if (!agrupado[c.veiculoId]) {
-        agrupado[c.veiculoId] = { veiculo: mapaVeiculos[c.veiculoId], total: 0, porTipo: {} };
+        agrupado[c.veiculoId] = {
+          veiculo: mapaVeiculos[c.veiculoId],
+          total: 0,
+          porTipo: {},
+        };
       }
-      agrupado[c.veiculoId].porTipo[c.tipo] = c._sum.valor;
-      agrupado[c.veiculoId].total += c._sum.valor;
+
+      agrupado[c.veiculoId].porTipo[c.tipo] = c._sum.valor || 0;
+      agrupado[c.veiculoId].total += c._sum.valor || 0;
     }
+
     res.json(Object.values(agrupado).sort((a, b) => b.total - a.total));
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 }
+
 async function kmPorVeiculo(req, res, next) {
   try {
     const { mes, ano } = req.query;
@@ -155,7 +241,7 @@ async function kmPorVeiculo(req, res, next) {
     }
 
     const resultado = Object.values(agrupado)
-      .map((item) => ({
+      .map(item => ({
         veiculo: item.veiculo,
         kmInicial: item.kmInicial,
         kmFinal: item.kmFinal,
