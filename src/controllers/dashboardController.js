@@ -169,4 +169,9 @@ async function kmPorVeiculo(req, res, next) {
   }
 }
 
-export default { resumo, custosMensais, custoPorVeiculo };
+export default {
+  resumo,
+  custosMensais,
+  custoPorVeiculo,
+  kmPorVeiculo,
+};
