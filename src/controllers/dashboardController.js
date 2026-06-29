@@ -101,5 +101,72 @@ async function custoPorVeiculo(req, res, next) {
     res.json(Object.values(agrupado).sort((a, b) => b.total - a.total));
   } catch (err) { next(err); }
 }
+async function kmPorVeiculo(req, res, next) {
+  try {
+    const { mes, ano } = req.query;
+
+    const hoje = new Date();
+    const anoAtual = Number(ano || hoje.getFullYear());
+    const mesAtual = Number(mes || hoje.getMonth() + 1);
+
+    const inicio = new Date(anoAtual, mesAtual - 1, 1);
+    const fim = new Date(anoAtual, mesAtual, 0, 23, 59, 59);
+
+    const abastecimentos = await prisma.abastecimento.findMany({
+      where: {
+        data: { gte: inicio, lte: fim },
+        kmAtual: { not: null },
+      },
+      include: {
+        veiculo: {
+          select: {
+            id: true,
+            placa: true,
+            modelo: true,
+          },
+        },
+      },
+      orderBy: [
+        { veiculoId: 'asc' },
+        { kmAtual: 'asc' },
+      ],
+    });
+
+    const agrupado = {};
+
+    for (const abast of abastecimentos) {
+      if (!agrupado[abast.veiculoId]) {
+        agrupado[abast.veiculoId] = {
+          veiculo: abast.veiculo,
+          kmInicial: abast.kmAtual,
+          kmFinal: abast.kmAtual,
+        };
+      }
+
+      agrupado[abast.veiculoId].kmInicial = Math.min(
+        agrupado[abast.veiculoId].kmInicial,
+        abast.kmAtual
+      );
+
+      agrupado[abast.veiculoId].kmFinal = Math.max(
+        agrupado[abast.veiculoId].kmFinal,
+        abast.kmAtual
+      );
+    }
+
+    const resultado = Object.values(agrupado)
+      .map((item) => ({
+        veiculo: item.veiculo,
+        kmInicial: item.kmInicial,
+        kmFinal: item.kmFinal,
+        kmRodado: item.kmFinal - item.kmInicial,
+      }))
+      .sort((a, b) => b.kmRodado - a.kmRodado);
+
+    res.json(resultado);
+  } catch (err) {
+    next(err);
+  }
+}
 
 export default { resumo, custosMensais, custoPorVeiculo };
