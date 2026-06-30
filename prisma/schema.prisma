@@ -32,6 +32,7 @@ model Veiculo {
   status    String   @default("ATIVO")
   ativo     Boolean  @default(true)
   createdAt DateTime @default(now())
+
   abastecimentos Abastecimento[]
   pneus          Pneu[]
   documentos     Documento[]
@@ -46,6 +47,7 @@ model Abastecimento {
   data            DateTime @default(now())
   litros          Float
   valorTotal      Float
+  pedagio         Float    @default(0)
   precoPorLitro   Float?
   kmAtual         Int
   kmAnterior      Int?
@@ -55,6 +57,7 @@ model Abastecimento {
   litrosArla      Float?
   valorArla       Float?
   veiculoId       Int
+
   veiculo         Veiculo  @relation(fields: [veiculoId], references: [id])
 }
 
@@ -142,9 +145,10 @@ model Frete {
   valorFrete       Float
   status           String   @default("PENDENTE")
   dataChegada      DateTime?
-  dataRota         DateTime? // ← data em que a rota foi realizada
+  dataRota         DateTime?
   veiculoId        Int
   usuarioId        String?
+
   veiculo          Veiculo  @relation(fields: [veiculoId], references: [id])
   usuario          Usuario? @relation(fields: [usuarioId], references: [id])
   criadoEm         DateTime @default(now())
