@@ -5,6 +5,7 @@ async function listar(req, res, next) {
   try {
     const { veiculoId, de, ate, page = 1, limit = 20 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
+
     const where = {
       veiculoId: veiculoId ? Number(veiculoId) : undefined,
       data: {
@@ -45,6 +46,7 @@ async function criar(req, res, next) {
       kmAtual: kmAtualRaw,
       litros: litrosRaw,
       valorTotal: valorTotalRaw,
+      pedagio: pedagioRaw,
       litrosArla: litrosArlaRaw,
       valorArla: valorArlaRaw,
       ...resto
@@ -54,8 +56,21 @@ async function criar(req, res, next) {
     const kmAtual = Number(kmAtualRaw);
     const litros = parseFloat(litrosRaw);
     const valorTotal = parseFloat(valorTotalRaw);
-    const litrosArla = litrosArlaRaw ? parseFloat(litrosArlaRaw) : undefined;
-    const valorArla = valorArlaRaw ? parseFloat(valorArlaRaw) : undefined;
+
+    const pedagio =
+      pedagioRaw !== undefined && pedagioRaw !== ''
+        ? parseFloat(pedagioRaw)
+        : 0;
+
+    const litrosArla =
+      litrosArlaRaw !== undefined && litrosArlaRaw !== ''
+        ? parseFloat(litrosArlaRaw)
+        : undefined;
+
+    const valorArla =
+      valorArlaRaw !== undefined && valorArlaRaw !== ''
+        ? parseFloat(valorArlaRaw)
+        : undefined;
 
     const anterior = await prisma.abastecimento.findFirst({
       where: {
@@ -78,6 +93,8 @@ async function criar(req, res, next) {
       resto.data = new Date(resto.data + 'T12:00:00').toISOString();
     }
 
+    const dataCusto = resto.data ? new Date(resto.data) : new Date();
+
     const [abastecimento] = await prisma.$transaction([
       prisma.abastecimento.create({
         data: {
@@ -86,6 +103,7 @@ async function criar(req, res, next) {
           kmAnterior,
           litros,
           valorTotal,
+          pedagio,
           precoPorLitro,
           consumoKmL,
           ...(litrosArla !== undefined && { litrosArla }),
@@ -112,9 +130,12 @@ async function criar(req, res, next) {
         data: {
           veiculoId,
           tipo: 'COMBUSTIVEL',
-          descricao: `Abastecimento ${litros}L`,
-          valor: valorTotal,
-          data: new Date(resto.data),
+          descricao:
+            pedagio > 0
+              ? `Abastecimento ${litros}L + Pedágio R$ ${pedagio.toFixed(2)}`
+              : `Abastecimento ${litros}L`,
+          valor: valorTotal + pedagio,
+          data: dataCusto,
           fornecedor: resto.posto,
         },
       }),
@@ -134,6 +155,7 @@ async function atualizar(req, res, next) {
       kmAtual,
       litros,
       valorTotal,
+      pedagio,
       posto,
       litrosArla,
       valorArla,
@@ -145,21 +167,24 @@ async function atualizar(req, res, next) {
       where: { id },
     });
 
-    const novoVeiculoId = veiculoId
-      ? Number(veiculoId)
-      : atual.veiculoId;
+    if (!atual) {
+      return res.status(404).json({
+        erro: 'Abastecimento não encontrado',
+      });
+    }
 
-    const novoKm = kmAtual
-      ? Number(kmAtual)
-      : atual.kmAtual;
+    const novoVeiculoId = veiculoId ? Number(veiculoId) : atual.veiculoId;
 
-    const novosLitros = litros
-      ? parseFloat(litros)
-      : atual.litros;
+    const novoKm = kmAtual ? Number(kmAtual) : atual.kmAtual;
 
-    const novoValor = valorTotal
-      ? parseFloat(valorTotal)
-      : atual.valorTotal;
+    const novosLitros = litros ? parseFloat(litros) : atual.litros;
+
+    const novoValor = valorTotal ? parseFloat(valorTotal) : atual.valorTotal;
+
+    const novoPedagio =
+      pedagio !== undefined && pedagio !== ''
+        ? parseFloat(pedagio)
+        : atual.pedagio ?? 0;
 
     const anterior = await prisma.abastecimento.findFirst({
       where: {
@@ -177,9 +202,7 @@ async function atualizar(req, res, next) {
         ? parseFloat(((novoKm - kmAnterior) / novosLitros).toFixed(2))
         : null;
 
-    const precoPorLitro = parseFloat(
-      (novoValor / novosLitros).toFixed(4)
-    );
+    const precoPorLitro = parseFloat((novoValor / novosLitros).toFixed(4));
 
     const updated = await prisma.abastecimento.update({
       where: { id },
@@ -189,14 +212,19 @@ async function atualizar(req, res, next) {
         kmAnterior,
         litros: novosLitros,
         valorTotal: novoValor,
+        pedagio: novoPedagio,
         precoPorLitro,
         consumoKmL,
         posto: posto ?? undefined,
-        litrosArla: litrosArla ? parseFloat(litrosArla) : null,
-        valorArla: valorArla ? parseFloat(valorArla) : null,
-        data: data
-          ? new Date(data + 'T12:00:00')
-          : undefined,
+        litrosArla:
+          litrosArla !== undefined && litrosArla !== ''
+            ? parseFloat(litrosArla)
+            : null,
+        valorArla:
+          valorArla !== undefined && valorArla !== ''
+            ? parseFloat(valorArla)
+            : null,
+        data: data ? new Date(data + 'T12:00:00') : undefined,
       },
     });
 
@@ -211,12 +239,7 @@ async function atualizar(req, res, next) {
     if (proximo) {
       const consumoProximo =
         proximo.kmAtual - novoKm > 0
-          ? parseFloat(
-              (
-                (proximo.kmAtual - novoKm) /
-                proximo.litros
-              ).toFixed(2)
-            )
+          ? parseFloat(((proximo.kmAtual - novoKm) / proximo.litros).toFixed(2))
           : null;
 
       await prisma.abastecimento.update({
@@ -278,6 +301,7 @@ async function resumoPorVeiculo(req, res, next) {
       _sum: {
         litros: true,
         valorTotal: true,
+        pedagio: true,
       },
       _avg: {
         consumoKmL: true,
@@ -302,20 +326,25 @@ async function resumoPorVeiculo(req, res, next) {
       },
     });
 
-    const mapa = Object.fromEntries(
-      veiculos.map((v) => [v.id, v])
-    );
+    const mapa = Object.fromEntries(veiculos.map((v) => [v.id, v]));
 
     res.json(
-      resumo.map((r) => ({
-        veiculo: mapa[r.veiculoId],
-        totalLitros: r._sum.litros,
-        totalValor: r._sum.valorTotal,
-        mediaConsumo: r._avg.consumoKmL
-          ? parseFloat(r._avg.consumoKmL.toFixed(2))
-          : null,
-        qtdAbastecimentos: r._count.id,
-      }))
+      resumo.map((r) => {
+        const totalDiesel = r._sum.valorTotal || 0;
+        const totalPedagio = r._sum.pedagio || 0;
+
+        return {
+          veiculo: mapa[r.veiculoId],
+          totalLitros: r._sum.litros,
+          totalValor: totalDiesel,
+          totalPedagio,
+          totalGeral: totalDiesel + totalPedagio,
+          mediaConsumo: r._avg.consumoKmL
+            ? parseFloat(r._avg.consumoKmL.toFixed(2))
+            : null,
+          qtdAbastecimentos: r._count.id,
+        };
+      })
     );
   } catch (err) {
     next(err);
